@@ -1,0 +1,198 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidWorkMode(mode) {
+      return mode in ['WFO', 'WFH', 'HYBRID'];
+    }
+
+    function isValidEmployeeStatus(status) {
+      return status in ['AKTIF', 'CUTI', 'NONAKTIF'];
+    }
+
+    function isValidAttendanceStatus(status) {
+      return status in ['HADIR', 'TERLAMBAT', 'IZIN', 'SAKIT'];
+    }
+
+    function isValidEntryType(entryType) {
+      return entryType in ['LIVE', 'MANUAL'];
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidUserProfile(data, userId) {
+      return data.userId == userId &&
+             data.employeeCode is string && data.employeeCode.size() >= 2 && data.employeeCode.size() <= 32 &&
+             data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 80 &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 120 &&
+             data.department is string && data.department.size() >= 2 && data.department.size() <= 60 &&
+             data.position is string && data.position.size() >= 2 && data.position.size() <= 60 &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 24)) &&
+             isValidWorkMode(data.workMode) &&
+             data.shiftStart is string && data.shiftStart.size() >= 4 && data.shiftStart.size() <= 10 &&
+             data.shiftEnd is string && data.shiftEnd.size() >= 4 && data.shiftEnd.size() <= 10 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidEmployee(data, userId) {
+      return data.userId == userId &&
+             data.employeeCode is string && data.employeeCode.size() >= 2 && data.employeeCode.size() <= 32 &&
+             data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 80 &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 120)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 24)) &&
+             data.department is string && data.department.size() >= 2 && data.department.size() <= 60 &&
+             data.position is string && data.position.size() >= 2 && data.position.size() <= 60 &&
+             isValidWorkMode(data.workMode) &&
+             isValidEmployeeStatus(data.status) &&
+             data.joinDate is string && data.joinDate.size() >= 4 && data.joinDate.size() <= 20 &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 240)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidAttendanceRecord(data, userId) {
+      return data.userId == userId &&
+             data.employeeId is string && data.employeeId.size() >= 1 && data.employeeId.size() <= 128 &&
+             data.employeeName is string && data.employeeName.size() >= 2 && data.employeeName.size() <= 80 &&
+             data.employeeCode is string && data.employeeCode.size() >= 2 && data.employeeCode.size() <= 32 &&
+             data.department is string && data.department.size() >= 2 && data.department.size() <= 60 &&
+             data.dateKey is string && data.dateKey.size() >= 8 && data.dateKey.size() <= 12 &&
+             data.checkInTime is string && data.checkInTime.size() >= 4 && data.checkInTime.size() <= 10 &&
+             (!('checkOutTime' in data) || (data.checkOutTime is string && data.checkOutTime.size() >= 4 && data.checkOutTime.size() <= 10)) &&
+             isValidWorkMode(data.workMode) &&
+             isValidAttendanceStatus(data.status) &&
+             isValidEntryType(data.entryType) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 240)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 4. Collection Rules
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'employeeCode', 'fullName', 'email',
+                         'department', 'position', 'workMode',
+                         'shiftStart', 'shiftEnd', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'employeeCode', 'fullName', 'email',
+                         'department', 'position', 'phone', 'workMode',
+                         'shiftStart', 'shiftEnd', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'employeeCode', 'fullName', 'email', 'department',
+                         'position', 'phone', 'workMode', 'shiftStart',
+                         'shiftEnd', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /employees/{employeeId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(employeeId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(employeeId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'employeeCode', 'fullName', 'department',
+                           'position', 'workMode', 'status', 'joinDate',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'employeeCode', 'fullName', 'email',
+                           'phone', 'department', 'position', 'workMode',
+                           'status', 'joinDate', 'notes', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidEmployee(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(employeeId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidEmployee(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'employeeCode', 'fullName', 'email', 'phone',
+                           'department', 'position', 'workMode', 'status',
+                           'joinDate', 'notes', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(employeeId);
+      }
+
+      match /attendance/{attendanceId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(attendanceId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(attendanceId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'employeeId', 'employeeName', 'employeeCode',
+                           'department', 'dateKey', 'checkInTime', 'workMode',
+                           'status', 'entryType', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'employeeId', 'employeeName', 'employeeCode',
+                           'department', 'dateKey', 'checkInTime', 'checkOutTime',
+                           'workMode', 'status', 'entryType', 'notes',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidAttendanceRecord(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(attendanceId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidAttendanceRecord(incoming(), userId) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'employeeName', 'employeeCode', 'department', 'dateKey',
+                           'checkInTime', 'checkOutTime', 'workMode', 'status',
+                           'entryType', 'notes', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(attendanceId);
+      }
+    }
+  }
+}

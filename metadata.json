@@ -1,0 +1,6 @@
+{
+  "name": "AbsensiKu",
+  "description": "Aplikasi absensi karyawan modern dengan check-in/out real-time, riwayat kehadiran, dan registrasi manual karyawan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

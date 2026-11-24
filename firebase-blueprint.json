@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Profil karyawan utama yang terdaftar pada akun Google pengguna.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID pemilik akun" },
+        "employeeCode": { "type": "string", "description": "Kode atau NIK karyawan" },
+        "fullName": { "type": "string", "description": "Nama lengkap karyawan" },
+        "email": { "type": "string", "description": "Alamat email karyawan" },
+        "department": { "type": "string", "description": "Divisi atau departemen" },
+        "position": { "type": "string", "description": "Jabatan atau posisi" },
+        "phone": { "type": "string", "description": "Nomor telepon karyawan" },
+        "workMode": { "type": "string", "enum": ["WFO", "WFH", "HYBRID"], "description": "Mode kerja default" },
+        "shiftStart": { "type": "string", "description": "Jam mulai shift format HH:mm" },
+        "shiftEnd": { "type": "string", "description": "Jam selesai shift format HH:mm" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "employeeCode", "fullName", "email", "department", "position", "workMode", "shiftStart", "shiftEnd", "createdAt", "updatedAt"]
+    },
+    "Employee": {
+      "title": "Employee",
+      "description": "Data karyawan yang didaftarkan secara manual dalam direktori workspace.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID pemilik workspace" },
+        "employeeCode": { "type": "string", "description": "Kode atau NIK karyawan" },
+        "fullName": { "type": "string", "description": "Nama lengkap karyawan" },
+        "email": { "type": "string", "description": "Alamat email kerja" },
+        "phone": { "type": "string", "description": "Nomor telepon" },
+        "department": { "type": "string", "description": "Divisi atau departemen" },
+        "position": { "type": "string", "description": "Jabatan" },
+        "workMode": { "type": "string", "enum": ["WFO", "WFH", "HYBRID"], "description": "Mode kerja" },
+        "status": { "type": "string", "enum": ["AKTIF", "CUTI", "NONAKTIF"], "description": "Status kepegawaian" },
+        "joinDate": { "type": "string", "description": "Tanggal bergabung YYYY-MM-DD" },
+        "notes": { "type": "string", "description": "Catatan tambahan registrasi manual" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "employeeCode", "fullName", "department", "position", "workMode", "status", "joinDate", "createdAt", "updatedAt"]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Catatan absensi karyawan (check-in/out langsung atau input manual).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID pemilik workspace" },
+        "employeeId": { "type": "string", "description": "ID dokumen karyawan pada direktori" },
+        "employeeName": { "type": "string", "description": "Nama karyawan" },
+        "employeeCode": { "type": "string", "description": "Kode atau NIK karyawan" },
+        "department": { "type": "string", "description": "Divisi karyawan" },
+        "dateKey": { "type": "string", "description": "Tanggal absensi YYYY-MM-DD" },
+        "checkInTime": { "type": "string", "description": "Jam masuk HH:mm" },
+        "checkOutTime": { "type": "string", "description": "Jam keluar HH:mm (opsional)" },
+        "workMode": { "type": "string", "enum": ["WFO", "WFH", "HYBRID"], "description": "Mode kerja" },
+        "status": { "type": "string", "enum": ["HADIR", "TERLAMBAT", "IZIN", "SAKIT"], "description": "Status kehadiran" },
+        "entryType": { "type": "string", "enum": ["LIVE", "MANUAL"], "description": "Sumber pencatatan absensi" },
+        "notes": { "type": "string", "description": "Keterangan atau alasan" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "employeeId", "employeeName", "employeeCode", "department", "dateKey", "checkInTime", "workMode", "status", "entryType", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Profil karyawan pemilik akun yang login dengan Google."
+    },
+    "/users/{userId}/employees/{employeeId}": {
+      "schema": { "$ref": "#/entities/Employee" },
+      "description": "Direktori karyawan yang didaftarkan secara manual."
+    },
+    "/users/{userId}/attendance/{attendanceId}": {
+      "schema": { "$ref": "#/entities/AttendanceRecord" },
+      "description": "Riwayat absensi live dan manual karyawan."
+    }
+  }
+}

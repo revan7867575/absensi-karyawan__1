@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">AbsensiKu</string>
+    <string name="auth_badge">ABSENSI DIGITAL</string>
+    <string name="auth_title">Absensi Karyawan Modern &amp; Terpadu</string>
+    <string name="auth_subtitle">Catat kehadiran sekali ketuk, kelola registrasi karyawan manual, dan pantau riwayat kerja secara real-time.</string>
+    <string name="auth_feature_checkin">Check-In &amp; Check-Out Instan</string>
+    <string name="auth_feature_manual">Registrasi Karyawan &amp; Absen Manual</string>
+    <string name="auth_feature_cloud">Sinkronisasi Cloud Real-Time</string>
+    <string name="auth_google_button">Masuk dengan Google</string>
+    <string name="auth_footer_note">Gunakan akun Google kerja Anda untuk keamanan akses data.</string>
+
+    <string name="tab_home">Beranda</string>
+    <string name="tab_history">Riwayat</string>
+    <string name="tab_employees">Karyawan</string>
+    <string name="tab_profile">Profil</string>
+
+    <string name="reg_title">Registrasi Karyawan</string>
+    <string name="reg_subtitle">Lengkapi data diri Anda secara manual untuk mulai mencatat absensi.</string>
+    <string name="reg_save_button">Simpan &amp; Mulai Absensi</string>
+
+    <string name="action_check_in">Check-In Sekarang</string>
+    <string name="action_check_out">Check-Out Sekarang</string>
+    <string name="action_manual_attendance">Absen Manual</string>
+    <string name="action_register_employee">Registrasi Karyawan</string>
+    <string name="action_sign_out">Keluar Akun</string>
+    <string name="action_edit_profile">Edit Profil Saya</string>
+    <string name="action_retry">Coba Lagi</string>
+    <string name="action_save">Simpan</string>
+    <string name="action_cancel">Batal</string>
+    <string name="action_delete">Hapus</string>
+
+    <string name="empty_attendance_title">Belum Ada Catatan Absensi</string>
+    <string name="empty_attendance_desc">Lakukan check-in langsung atau tambahkan catatan absen manual untuk memulai.</string>
+    <string name="empty_employees_title">Belum Ada Karyawan Terdaftar</string>
+    <string name="empty_employees_desc">Tekan tombol Registrasi Karyawan untuk mendaftarkan anggota tim secara manual.</string>
+</resources>
